@@ -36,9 +36,10 @@ def disassemble(bc):
         operand_ts = opcode_operand[opcode]
         for oper_t in operand_ts:
             is_str = oper_t.endswith(":S")
-            if is_str:
-                oper_t = oper_t[:-2]
-                
+            for suffix in (":S", ":B", ":F"):
+                if oper_t.endswith(suffix):
+                    oper_t = oper_t[: -len(suffix)]
+                    break
             size, conv_to, _ = operand_type[oper_t]
             val = conv_to(bc[i:i+size])
             inst[1].append((oper_t, is_str, val))

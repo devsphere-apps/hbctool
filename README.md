@@ -62,6 +62,8 @@ Examples:
 
 > For Android, the HBC file normally locates at `assets` directory with `index.android.bundle` filename.
 
+After `hbctool disasm <bundle> <out_dir>`, the output directory contains **`instruction.hasm`** (disassembled bytecode), `string.json`, and `metadata.json` — not a file named `hbc_disasm.hasm`.
+
 ## Supported Versions
 
 | HBC Version | Status    | React Native Era      | Key Features                          |
@@ -82,12 +84,16 @@ Feel free to create an issue or submit a pull request in any way you want to con
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-However, please run the unit test before submitting the pull request.
+However, please run the unit tests before submitting the pull request.
+
+From the **repository root** (the folder that contains `pyproject.toml`):
 
 ```
-cd hbctool
-python test.py
+python3 test.py
+python3 -m pytest test_new_versions.py -v
 ```
+
+The root `test.py` runs the legacy unittest suite (23 tests) with the correct working directory. New HBC version checks live in `test_new_versions.py`.
 
 I use poetry to build this tool. To build it yourself, simply execute:
 
@@ -116,6 +122,37 @@ I use poetry to build this tool. To build it yourself, simply execute:
 - Initial versions with HBC 59, 62, 74, 76 support
 
 ## Troubleshooting
+
+**`error: externally-managed-environment` (macOS Homebrew Python)**
+
+Do not install into the system Python. Create a venv in the repo and install there:
+
+```bash
+cd /path/to/hbctool
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+python3 -m pip install -e .
+hbctool --help
+```
+
+**`hbctool: command not found`**
+
+The shell only knows about `hbctool` after the package is installed into the **active** Python (use a venv as above, then `pip install -e .`):
+
+```bash
+cd /path/to/hbctool
+source .venv/bin/activate
+python3 -m pip install -e .
+hbctool --help
+```
+
+Alternatively, from the same directory, without installing the script onto `PATH`:
+
+```bash
+python3 -m pip install docopt
+cd /path/to/hbctool
+PYTHONPATH=. python3 -m hbctool disasm /path/to/index.android.bundle ./out_hasms
+```
 
 **Unsupported HBC version error**
 

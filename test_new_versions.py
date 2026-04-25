@@ -43,15 +43,15 @@ def test_v90_opcode_bigint():
     opcode_list = list(opcodes.keys())
     assert "LoadConstBigInt" in opcodes
     assert "LoadConstBigIntLongIndex" in opcodes
-    assert opcodes["LoadConstBigInt"] == ["Reg8", "UInt16"]
-    assert opcodes["LoadConstBigIntLongIndex"] == ["Reg8", "UInt32"]
+    assert opcodes["LoadConstBigInt"] == ["Reg8", "UInt16:B"]
+    assert opcodes["LoadConstBigIntLongIndex"] == ["Reg8", "UInt32:B"]
     idx_double = opcode_list.index("LoadConstDouble")
     idx_bigint = opcode_list.index("LoadConstBigInt")
     idx_bigint_long = opcode_list.index("LoadConstBigIntLongIndex")
     idx_string = opcode_list.index("LoadConstString")
     assert idx_bigint == idx_double + 1, "LoadConstBigInt must follow LoadConstDouble"
     assert idx_bigint_long == idx_double + 2, "LoadConstBigIntLongIndex must be 2 after LoadConstDouble"
-    assert idx_string == idx_double + 3, "LoadConstString must be 3 after LoadConstDouble in v90"
+    assert idx_string == idx_double + 3, "LoadConstString must be 3 after LoadConstDouble"
 
 
 def test_v90_structure_header_fields():

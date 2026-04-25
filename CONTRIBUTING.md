@@ -80,16 +80,14 @@ Add an entry to the supported versions table and the changelog.
 
 ## Running Tests
 
-```
-cd hbctool
-python test.py
-```
-
-For the new version tests specifically:
+From the repository root (where `pyproject.toml` lives):
 
 ```
-python -m pytest test_new_versions.py -v
+python3 test.py
+python3 -m pytest test_new_versions.py -v
 ```
+
+The root `test.py` is a small runner that loads `hbctool.test` and uses the correct working directory for bundled example bundles under `hbctool/hbc/hbc*/example/`.
 
 ## Commit Message Format
 

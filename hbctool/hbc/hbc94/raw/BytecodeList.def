@@ -54,6 +54,12 @@
 #ifndef ASSERT_MONOTONE_INCREASING
 #define ASSERT_MONOTONE_INCREASING(first, ...)
 #endif
+#ifndef OPERAND_BIGINT_ID
+#define OPERAND_BIGINT_ID(name, operandNumber)
+#endif
+#ifndef OPERAND_FUNCTION_ID
+#define OPERAND_FUNCTION_ID(name, operandNumber)
+#endif
 #ifndef OPERAND_STRING_ID
 #define OPERAND_STRING_ID(name, operandNumber)
 #endif
@@ -239,10 +245,21 @@ DEFINE_OPCODE_1(GetNewTarget, Reg8)
 /// Create a new environment, to store values captured by closures.
 DEFINE_OPCODE_1(CreateEnvironment, Reg8)
 
+/// Create a new inner environment, to store values captured by closures.
+/// Arg1 is the destination.
+/// Arg2 is the parent environment.
+/// Arg3 is the number of slots in the environment.
+DEFINE_OPCODE_3(CreateInnerEnvironment, Reg8, Reg8, UInt32)
+
 /// Declare a global variable by string table index.
 /// The variable will be set to undefined.
 DEFINE_OPCODE_1(DeclareGlobalVar, UInt32)
 OPERAND_STRING_ID(DeclareGlobalVar, 1)
+
+/// Checks if globalThis has a restricted global property with the given name.
+/// Arg1 is the name to check.
+DEFINE_OPCODE_1(ThrowIfHasRestrictedGlobalProperty, UInt32)
+OPERAND_STRING_ID(ThrowIfHasRestrictedGlobalProperty, 1)
 
 /// Get an object property by string table index.
 /// Arg1 = Arg2[stringtable[Arg4]]
@@ -305,11 +322,11 @@ OPERAND_STRING_ID(PutNewOwnNEByIdLong, 3)
 
 // The "NE" versions must be ordered after the "normal" versions.
 ASSERT_MONOTONE_INCREASING(
-    PutNewOwnByIdShort,
-    PutNewOwnById,
-    PutNewOwnByIdLong,
-    PutNewOwnNEById,
-    PutNewOwnNEByIdLong)
+ PutNewOwnByIdShort,
+ PutNewOwnById,
+ PutNewOwnByIdLong,
+ PutNewOwnNEById,
+ PutNewOwnNEByIdLong)
 
 /// Assign a value to a constant integer own property which will be created as
 /// enumerable. This is used (potentially in conjunction with
@@ -323,7 +340,7 @@ DEFINE_OPCODE_3(PutOwnByIndexL, Reg8, Reg8, UInt32)
 /// Arg2 is the value to write.
 /// Arg3 is the property name.
 /// Arg4 : bool -> enumerable. If true, the property is created as enumerable,
-///        non-enumerable otherwise.
+/// non-enumerable otherwise.
 /// Arg1[Arg3] = Arg2;
 DEFINE_OPCODE_4(PutOwnByVal, Reg8, Reg8, Reg8, UInt8)
 
@@ -383,7 +400,7 @@ DEFINE_OPCODE_5(GetNextPName, Reg8, Reg8, Reg8, Reg8, Reg8)
 /// Arg1 is the destination of the return value.
 /// Arg2 is the closure to invoke.
 /// Arg3 is the number of arguments, assumed to be found in reverse order
-///      from the end of the current frame.
+/// from the end of the current frame.
 DEFINE_OPCODE_3(Call, Reg8, Reg8, UInt8)
 DEFINE_RET_TARGET(Call)
 
@@ -391,8 +408,8 @@ DEFINE_RET_TARGET(Call)
 /// Arg1 is the destination of the return value.
 /// Arg2 is the closure to invoke.
 /// Arg3 is the number of arguments, assumed to be found in reverse order
-///      from the end of the current frame. The first argument 'this'
-///      is assumed to be created with CreateThis.
+/// from the end of the current frame. The first argument 'this'
+/// is assumed to be created with CreateThis.
 DEFINE_OPCODE_3(Construct, Reg8, Reg8, UInt8)
 DEFINE_RET_TARGET(Construct)
 
@@ -406,11 +423,12 @@ DEFINE_RET_TARGET(Call1)
 /// Call a function directly without a closure.
 /// Arg1 is the destination of the return value.
 /// Arg2 is the number of arguments, assumed to be found in reverse order
-///      from the end of the current frame. The first argument 'this'
-///      is assumed to be created with CreateThis.
+/// from the end of the current frame. The first argument 'this'
+/// is assumed to be created with CreateThis.
 /// Arg3 is index in the function table.
 /// Note that we expect the variable-sized argument to be last.
 DEFINE_OPCODE_3(CallDirect, Reg8, UInt8, UInt16)
+OPERAND_FUNCTION_ID(CallDirect, 3)
 DEFINE_RET_TARGET(CallDirect)
 
 /// Call a function with two args.
@@ -454,16 +472,16 @@ DEFINE_RET_TARGET(CallDirectLongIndex)
 
 // Enforce the order.
 ASSERT_MONOTONE_INCREASING(
-    Call,
-    Construct,
-    Call1,
-    CallDirect,
-    Call2,
-    Call3,
-    Call4,
-    CallLong,
-    ConstructLong,
-    CallDirectLongIndex)
+ Call,
+ Construct,
+ Call1,
+ CallDirect,
+ Call2,
+ Call3,
+ Call4,
+ CallLong,
+ ConstructLong,
+ CallDirectLongIndex)
 
 /// Call a builtin function.
 /// Note this is NOT marked as a Ret target, because the callee is native
@@ -471,7 +489,7 @@ ASSERT_MONOTONE_INCREASING(
 /// Arg1 is the destination of the return value.
 /// Arg2 is the builtin number.
 /// Arg3 is the number of arguments, assumed to be found in reverse order
-///      from the end of the current frame.
+/// from the end of the current frame.
 /// thisArg is set to "undefined".
 DEFINE_OPCODE_3(CallBuiltin, Reg8, UInt8, UInt8)
 
@@ -481,7 +499,7 @@ DEFINE_OPCODE_3(CallBuiltin, Reg8, UInt8, UInt8)
 /// Arg1 is the destination of the return value.
 /// Arg2 is the builtin number.
 /// Arg3 is the number of arguments, assumed to be found in reverse order
-///      from the end of the current frame.
+/// from the end of the current frame.
 /// thisArg is set to "undefined".
 DEFINE_OPCODE_3(CallBuiltinLong, Reg8, UInt8, UInt32)
 
@@ -504,7 +522,8 @@ DEFINE_OPCODE_1(Catch, Reg8)
 /// ES6 18.2.1.1 PerformEval(Arg2, evalRealm, strictCaller=true, direct=true)
 /// Arg1 is the destination of the return value.
 /// Arg2 is the value to eval.
-DEFINE_OPCODE_2(DirectEval, Reg8, Reg8)
+/// Arg3 is a boolean which is true if the eval should be performed in strict mode.
+DEFINE_OPCODE_3(DirectEval, Reg8, Reg8, UInt8)
 
 /// Throw an exception.
 /// throw Arg1;
@@ -533,6 +552,8 @@ DEFINE_OPCODE_1(ProfilePoint, UInt16)
 /// Arg3 is index in the function table.
 DEFINE_OPCODE_3(CreateClosure, Reg8, Reg8, UInt16)
 DEFINE_OPCODE_3(CreateClosureLongIndex, Reg8, Reg8, UInt32)
+OPERAND_FUNCTION_ID(CreateClosure, 3)
+OPERAND_FUNCTION_ID(CreateClosureLongIndex, 3)
 
 /// Create a closure for a GeneratorFunction.
 /// Arg1 is the register in which to store the closure.
@@ -540,6 +561,8 @@ DEFINE_OPCODE_3(CreateClosureLongIndex, Reg8, Reg8, UInt32)
 /// Arg3 is index in the function table.
 DEFINE_OPCODE_3(CreateGeneratorClosure, Reg8, Reg8, UInt16)
 DEFINE_OPCODE_3(CreateGeneratorClosureLongIndex, Reg8, Reg8, UInt32)
+OPERAND_FUNCTION_ID(CreateGeneratorClosure, 3)
+OPERAND_FUNCTION_ID(CreateGeneratorClosureLongIndex, 3)
 
 /// Create a closure for an AsyncFunction.
 /// Arg1 is the register in which to store the closure.
@@ -547,6 +570,8 @@ DEFINE_OPCODE_3(CreateGeneratorClosureLongIndex, Reg8, Reg8, UInt32)
 /// Arg3 is index in the function table.
 DEFINE_OPCODE_3(CreateAsyncClosure, Reg8, Reg8, UInt16)
 DEFINE_OPCODE_3(CreateAsyncClosureLongIndex, Reg8, Reg8, UInt32)
+OPERAND_FUNCTION_ID(CreateAsyncClosure, 3)
+OPERAND_FUNCTION_ID(CreateAsyncClosureLongIndex, 3)
 
 /// Allocate an empty, uninitialized object (immediately before a constructor).
 /// Arg1 is the destination register.
@@ -576,6 +601,12 @@ DEFINE_OPCODE_2(LoadConstInt, Reg8, Imm32)
 /// Load a constant double value.
 DEFINE_OPCODE_2(LoadConstDouble, Reg8, Double)
 
+/// Load a constant BigInt value by bigint table index.
+DEFINE_OPCODE_2(LoadConstBigInt, Reg8, UInt16)
+DEFINE_OPCODE_2(LoadConstBigIntLongIndex, Reg8, UInt32)
+OPERAND_BIGINT_ID(LoadConstBigInt, 2)
+OPERAND_BIGINT_ID(LoadConstBigIntLongIndex, 2)
+
 /// Load a constant string value by string table index.
 DEFINE_OPCODE_2(LoadConstString, Reg8, UInt16)
 DEFINE_OPCODE_2(LoadConstStringLongIndex, Reg8, UInt32)
@@ -598,22 +629,25 @@ DEFINE_OPCODE_2(CoerceThisNS, Reg8, Reg8)
 
 /// Obtain the raw \c this value and coerce it to an object. Equivalent to:
 /// \code
-///     LoadParam    Arg1, #0
-///     CoerceThisNS Arg1, Arg1
+/// LoadParam Arg1, #0
+/// CoerceThisNS Arg1, Arg1
 /// \endcode
 DEFINE_OPCODE_1(LoadThisNS, Reg8)
 
 /// Convert a value to a number.
 /// Arg1 = Arg2 - 0
 DEFINE_OPCODE_2(ToNumber, Reg8, Reg8)
+/// Convert a value to a numberic.
+/// Arg1 = ToNumeric(Arg2)
+DEFINE_OPCODE_2(ToNumeric, Reg8, Reg8)
 /// Convert a value to a 32-bit signed integer.
 /// Arg1 = Arg2 | 0
 DEFINE_OPCODE_2(ToInt32, Reg8, Reg8)
 
 /// Convert a value to a string as if evaluating the expression:
-///     Arg1 = "" + Arg2
+/// Arg1 = "" + Arg2
 /// In practice this means
-///     Arg1 = ToString(ToPrimitive(Arg2, PreferredType::NONE))
+/// Arg1 = ToString(ToPrimitive(Arg2, PreferredType::NONE))
 /// with ToPrimitive (ES5.1 9.1) and ToString (ES5.1 9.8).
 DEFINE_OPCODE_2(AddEmptyString, Reg8, Reg8)
 
@@ -638,7 +672,7 @@ DEFINE_OPCODE_2(GetArgumentsLength, Reg8, Reg8)
 
 /// Create an actual 'arguments' array, if get-by-index and length isn't enough.
 /// Arg1 is the lazy loaded register, which afterwards will contain a proper
-///      object that can be used by non-*Arguments* opcodes like Return.
+/// object that can be used by non-*Arguments* opcodes like Return.
 DEFINE_OPCODE_1(ReifyArguments, Reg8)
 
 /// Create a regular expression.
@@ -657,9 +691,9 @@ OPERAND_STRING_ID(CreateRegExp, 3)
 /// instruction. Jump tables are appended to the bytecode. Arg 3 is the relative
 /// offset for the "default" jump. Arg 4 is the unsigned min value, if arg 1 is
 /// less than this value jmp to
-///   default block
+/// default block
 /// Arg 5 is the unsigned max value, if arg 1 is greater than this value jmp to
-///   default block.
+/// default block.
 ///
 /// Given the above, the jump table entry for a given value (that is in range)
 /// is located at offset ip + arg2 + arg1 - arg4. We subtract arg4 to avoid
@@ -688,6 +722,8 @@ DEFINE_OPCODE_0(CompleteGenerator)
 /// Arg3 is index in the function table.
 DEFINE_OPCODE_3(CreateGenerator, Reg8, Reg8, UInt16)
 DEFINE_OPCODE_3(CreateGeneratorLongIndex, Reg8, Reg8, UInt32)
+OPERAND_FUNCTION_ID(CreateGenerator, 3)
+OPERAND_FUNCTION_ID(CreateGeneratorLongIndex, 3)
 
 /// Arg1 [out] is the result iterator or index.
 /// Arg2 [in/out] is the source. Output for either the source or next method.
@@ -702,12 +738,12 @@ DEFINE_OPCODE_2(IteratorBegin, Reg8, Reg8)
 /// Arg2 [in] is the source or the next method.
 /// If iterator is undefined, result = undefined.
 /// If iterator is a number:
-///   If iterator is less than source.length, return source[iterator++]
-///   Else iterator = undefined and result = undefined
+/// If iterator is less than source.length, return source[iterator++]
+/// Else iterator = undefined and result = undefined
 /// Else:
-///   n = iterator.next()
-///   If n.done, iterator = undefined and result = undefined.
-///   Else result = n.value
+/// n = iterator.next()
+/// If n.done, iterator = undefined and result = undefined.
+/// Else result = n.value
 /// See IR.md for IteratorNextInst.
 DEFINE_OPCODE_3(IteratorNext, Reg8, Reg8, Reg8)
 
@@ -723,20 +759,20 @@ DEFINE_OPCODE_2(IteratorClose, Reg8, UInt8)
 // The macros will automatically generate two opcodes for each definition,
 // one short jump that takes Addr8 as target and one long jump that takes
 // Addr32 as target. The address is relative to the offset of the instruction.
-#define DEFINE_JUMP_1(name)           \
-  DEFINE_OPCODE_1(name, Addr8)        \
-  DEFINE_OPCODE_1(name##Long, Addr32) \
-  DEFINE_JUMP_LONG_VARIANT(name, name##Long)
+#define DEFINE_JUMP_1(name) \
+ DEFINE_OPCODE_1(name, Addr8) \
+ DEFINE_OPCODE_1(name##Long, Addr32) \
+ DEFINE_JUMP_LONG_VARIANT(name, name##Long)
 
-#define DEFINE_JUMP_2(name)                 \
-  DEFINE_OPCODE_2(name, Addr8, Reg8)        \
-  DEFINE_OPCODE_2(name##Long, Addr32, Reg8) \
-  DEFINE_JUMP_LONG_VARIANT(name, name##Long)
+#define DEFINE_JUMP_2(name) \
+ DEFINE_OPCODE_2(name, Addr8, Reg8) \
+ DEFINE_OPCODE_2(name##Long, Addr32, Reg8) \
+ DEFINE_JUMP_LONG_VARIANT(name, name##Long)
 
-#define DEFINE_JUMP_3(name)                       \
-  DEFINE_OPCODE_3(name, Addr8, Reg8, Reg8)        \
-  DEFINE_OPCODE_3(name##Long, Addr32, Reg8, Reg8) \
-  DEFINE_JUMP_LONG_VARIANT(name, name##Long)
+#define DEFINE_JUMP_3(name) \
+ DEFINE_OPCODE_3(name, Addr8, Reg8, Reg8) \
+ DEFINE_OPCODE_3(name##Long, Addr32, Reg8, Reg8) \
+ DEFINE_JUMP_LONG_VARIANT(name, name##Long)
 
 /// Unconditional branch to Arg1.
 DEFINE_JUMP_1(Jmp)
@@ -847,4 +883,6 @@ ASSERT_EQUAL_LAYOUT2(Construct, ConstructLong)
 #undef ASSERT_EQUAL_LAYOUT3
 #undef ASSERT_EQUAL_LAYOUT4
 #undef ASSERT_MONOTONE_INCREASING
+#undef OPERAND_BIGINT_ID
+#undef OPERAND_FUNCTION_ID
 #undef OPERAND_STRING_ID

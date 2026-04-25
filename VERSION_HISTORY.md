@@ -63,16 +63,13 @@ Header total size remains 124 bytes.
 - **BigInt Storage** — raw byte blob containing serialised BigInt data
 - **Function Source Table** — array of `{first: uint32, second: uint32}` pairs (functionID → stringID mapping for preserved source)
 
-#### New opcodes
+For v90–v96, `data/opcode.json` is generated from **upstream** `BytecodeList.def` (see `hbc9x/tool/opcode_generator.py`). The generator includes the `HERMES_RUN_WASM` block (Add32 … Store32), because React Native’s Hermes build defines it — real bundles use those opcode bytes.
 
-Two opcodes inserted after `LoadConstDouble` (opcode index 110):
+#### New opcodes (relative to older hbctool v85 list)
 
-| Opcode                    | Operands           | Byte value |
-|---------------------------|--------------------|------------|
-| `LoadConstBigInt`         | `Reg8`, `UInt16`   | 111        |
-| `LoadConstBigIntLongIndex`| `Reg8`, `UInt32`   | 112        |
+`LoadConstBigInt` / `LoadConstBigIntLongIndex` appear after `LoadConstDouble`, with `OPERAND_BIGINT_ID` in the C++ list (in JSON these operands are `UInt16:B` / `UInt32:B` for tooling). Other newer entries include `CreateInnerEnvironment`, `ThrowIfHasRestrictedGlobalProperty`, `ToNumeric`, and closure opcodes with `OPERAND_FUNCTION_ID` (shown as `:F` in JSON).
 
-All subsequent opcodes (previously starting at 111) are shifted up by 2.
+Exact opcode **indices** change whenever Hermes adds instructions; do not hard-code byte values. Regenerate `opcode.json` from the matching `BytecodeList.def` tag when upgrading.
 
 ---
 

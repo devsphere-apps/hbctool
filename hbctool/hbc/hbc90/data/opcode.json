@@ -237,7 +237,15 @@
     "CreateEnvironment": [
         "Reg8"
     ],
+    "CreateInnerEnvironment": [
+        "Reg8",
+        "Reg8",
+        "UInt32"
+    ],
     "DeclareGlobalVar": [
+        "UInt32:S"
+    ],
+    "ThrowIfHasRestrictedGlobalProperty": [
         "UInt32:S"
     ],
     "GetByIdShort": [
@@ -398,7 +406,7 @@
     "CallDirect": [
         "Reg8",
         "UInt8",
-        "UInt16"
+        "UInt16:F"
     ],
     "Call2": [
         "Reg8",
@@ -458,7 +466,8 @@
     ],
     "DirectEval": [
         "Reg8",
-        "Reg8"
+        "Reg8",
+        "UInt8"
     ],
     "Throw": [
         "Reg8"
@@ -475,32 +484,32 @@
     "CreateClosure": [
         "Reg8",
         "Reg8",
-        "UInt16"
+        "UInt16:F"
     ],
     "CreateClosureLongIndex": [
         "Reg8",
         "Reg8",
-        "UInt32"
+        "UInt32:F"
     ],
     "CreateGeneratorClosure": [
         "Reg8",
         "Reg8",
-        "UInt16"
+        "UInt16:F"
     ],
     "CreateGeneratorClosureLongIndex": [
         "Reg8",
         "Reg8",
-        "UInt32"
+        "UInt32:F"
     ],
     "CreateAsyncClosure": [
         "Reg8",
         "Reg8",
-        "UInt16"
+        "UInt16:F"
     ],
     "CreateAsyncClosureLongIndex": [
         "Reg8",
         "Reg8",
-        "UInt32"
+        "UInt32:F"
     ],
     "CreateThis": [
         "Reg8",
@@ -534,11 +543,11 @@
     ],
     "LoadConstBigInt": [
         "Reg8",
-        "UInt16"
+        "UInt16:B"
     ],
     "LoadConstBigIntLongIndex": [
         "Reg8",
-        "UInt32"
+        "UInt32:B"
     ],
     "LoadConstString": [
         "Reg8",
@@ -574,6 +583,10 @@
         "Reg8"
     ],
     "ToNumber": [
+        "Reg8",
+        "Reg8"
+    ],
+    "ToNumeric": [
         "Reg8",
         "Reg8"
     ],
@@ -619,12 +632,12 @@
     "CreateGenerator": [
         "Reg8",
         "Reg8",
-        "UInt16"
+        "UInt16:F"
     ],
     "CreateGeneratorLongIndex": [
         "Reg8",
         "Reg8",
-        "UInt32"
+        "UInt32:F"
     ],
     "IteratorBegin": [
         "Reg8",
